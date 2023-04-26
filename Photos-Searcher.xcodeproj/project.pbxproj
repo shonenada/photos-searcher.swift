@@ -24,13 +24,13 @@
 		0E8CC2D329F934C5005D5E8B /* vocab.json in Resources */ = {isa = PBXBuildFile; fileRef = 0E8CC2D129F934C5005D5E8B /* vocab.json */; };
 		0E8CC2D429F934C5005D5E8B /* merges.txt in Resources */ = {isa = PBXBuildFile; fileRef = 0E8CC2D229F934C5005D5E8B /* merges.txt */; };
 		0E8CC2D629F934DD005D5E8B /* Activation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2D529F934DD005D5E8B /* Activation.swift */; };
-		0E8CC2D929F93502005D5E8B /* ClipTextEncoder.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2D729F934F4005D5E8B /* ClipTextEncoder.mlmodel */; };
-		0E8CC2DA29F93502005D5E8B /* ClipImageEncoder.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2D829F93502005D5E8B /* ClipImageEncoder.mlmodel */; };
 		0E8CC2DD29F93502005D5E8B /* BPETokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2DB29F93502005D5E8B /* BPETokenizer.swift */; };
 		0E8CC2DE29F93502005D5E8B /* BPETokenizer+Reading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2DC29F93502005D5E8B /* BPETokenizer+Reading.swift */; };
 		0E8CC2E029F93524005D5E8B /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2DF29F93524005D5E8B /* Math.swift */; };
 		0E8CC2E229F935FB005D5E8B /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2E129F935FB005D5E8B /* Helper.swift */; };
 		0E8CC2E429F937BB005D5E8B /* UIImage+Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2E329F937BB005D5E8B /* UIImage+Resize.swift */; };
+		0E8CC2E729F97B2B005D5E8B /* ClipTextEncoder.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2E529F97B2B005D5E8B /* ClipTextEncoder.mlmodel */; };
+		0E8CC2E829F97B2B005D5E8B /* ClipImageEncoder.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 0E8CC2E629F97B2B005D5E8B /* ClipImageEncoder.mlmodel */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,13 +52,13 @@
 		0E8CC2D129F934C5005D5E8B /* vocab.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = vocab.json; sourceTree = "<group>"; };
 		0E8CC2D229F934C5005D5E8B /* merges.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = merges.txt; sourceTree = "<group>"; };
 		0E8CC2D529F934DD005D5E8B /* Activation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activation.swift; sourceTree = "<group>"; };
-		0E8CC2D729F934F4005D5E8B /* ClipTextEncoder.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = ClipTextEncoder.mlmodel; sourceTree = "<group>"; };
-		0E8CC2D829F93502005D5E8B /* ClipImageEncoder.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = ClipImageEncoder.mlmodel; sourceTree = "<group>"; };
 		0E8CC2DB29F93502005D5E8B /* BPETokenizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BPETokenizer.swift; sourceTree = "<group>"; };
 		0E8CC2DC29F93502005D5E8B /* BPETokenizer+Reading.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "BPETokenizer+Reading.swift"; sourceTree = "<group>"; };
 		0E8CC2DF29F93524005D5E8B /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		0E8CC2E129F935FB005D5E8B /* Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 		0E8CC2E329F937BB005D5E8B /* UIImage+Resize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIImage+Resize.swift"; sourceTree = "<group>"; };
+		0E8CC2E529F97B2B005D5E8B /* ClipTextEncoder.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = ClipTextEncoder.mlmodel; path = python/ClipTextEncoder.mlmodel; sourceTree = SOURCE_ROOT; };
+		0E8CC2E629F97B2B005D5E8B /* ClipImageEncoder.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = ClipImageEncoder.mlmodel; path = python/ClipImageEncoder.mlmodel; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,8 +113,8 @@
 		0E8CC2BA29F933EF005D5E8B /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				0E8CC2D829F93502005D5E8B /* ClipImageEncoder.mlmodel */,
-				0E8CC2D729F934F4005D5E8B /* ClipTextEncoder.mlmodel */,
+				0E8CC2E629F97B2B005D5E8B /* ClipImageEncoder.mlmodel */,
+				0E8CC2E529F97B2B005D5E8B /* ClipTextEncoder.mlmodel */,
 				0E8CC2D229F934C5005D5E8B /* merges.txt */,
 				0E8CC2D129F934C5005D5E8B /* vocab.json */,
 			);
@@ -234,14 +234,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E8CC2DE29F93502005D5E8B /* BPETokenizer+Reading.swift in Sources */,
-				0E8CC2D929F93502005D5E8B /* ClipTextEncoder.mlmodel in Sources */,
 				0E8CC2E029F93524005D5E8B /* Math.swift in Sources */,
+				0E8CC2E729F97B2B005D5E8B /* ClipTextEncoder.mlmodel in Sources */,
+				0E8CC2E829F97B2B005D5E8B /* ClipImageEncoder.mlmodel in Sources */,
 				0E8CC2DD29F93502005D5E8B /* BPETokenizer.swift in Sources */,
 				0E8CC2AF29F933B5005D5E8B /* ContentView.swift in Sources */,
 				0E8CC2E429F937BB005D5E8B /* UIImage+Resize.swift in Sources */,
 				0E8CC2E229F935FB005D5E8B /* Helper.swift in Sources */,
 				0E8CC2AD29F933B5005D5E8B /* Photos_SearcherApp.swift in Sources */,
-				0E8CC2DA29F93502005D5E8B /* ClipImageEncoder.mlmodel in Sources */,
 				0E8CC2D629F934DD005D5E8B /* Activation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

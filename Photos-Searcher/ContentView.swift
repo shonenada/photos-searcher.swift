@@ -23,6 +23,7 @@ struct ContentView: View {
     @State var message: String = "";
     @State var displayImages: [UIImage] = [];
     @State var displayFeatures: [Float32] = [];
+    @State var isSearching = false;
     
     var body: some View {
         VStack {
@@ -46,11 +47,15 @@ struct ContentView: View {
                     TextField("Keyword", text: $keyword)
                 }.padding(20)
                 Button(action: {
-                    search()
+                    isSearching = true
+                    DispatchQueue.global(qos: .userInitiated).async { search() }
                 }, label: {
-                    Text("Search")
-                })
-                Text(message)
+                    if isSearching {
+                        Text("Searching...")
+                    } else {
+                        Text("Search")
+                    }
+                }).disabled(isSearching)
                 Spacer()
 
                 ScrollView {
@@ -181,6 +186,7 @@ struct ContentView: View {
             displayImages.append(photos[p.0]);
             displayFeatures.append(p.1);
         }
+        isSearching = false;
     }
 }
 
