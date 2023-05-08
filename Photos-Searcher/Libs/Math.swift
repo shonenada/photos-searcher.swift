@@ -5,26 +5,24 @@
 //  Created by shonenada on 2023/4/26.
 //
 
-import Foundation
+import Accelerate
 
-public func cosineSim(A: [Float32], B: [Float32]) -> Float32 {
-    return dot(A: A, B: B) / (magnitude(A: A) * magnitude(A: B))
-}
-
-/** Dot Product **/
-public func dot(A: [Float32], B: [Float32]) -> Float32 {
-    var x: Float32 = 0
-    for i in 0...A.count-1 {
-        x += A[i] * B[i]
+func cosineSimilarity(_ vector1: [Float], _ vector2: [Float]) -> Float? {
+    guard vector1.count == vector2.count else {
+        return nil
     }
-    return x
-}
 
-/** Vector Magnitude **/
-public func magnitude(A: [Float32]) -> Float32 {
-    var x: Float32 = 0
-    for elt in A {
-        x += elt * elt
-    }
-    return sqrt(x)
+    var dotProduct: Float = 0.0
+    var vector1Norm: Float = 0.0
+    var vector2Norm: Float = 0.0
+
+    let count = vDSP_Length(vector1.count)
+
+    vDSP_dotpr(vector1, 1, vector2, 1, &dotProduct, count)
+    vDSP_svesq(vector1, 1, &vector1Norm, count)
+    vDSP_svesq(vector2, 1, &vector2Norm, count)
+
+    let result = dotProduct / (sqrt(vector1Norm) * sqrt(vector2Norm))
+
+    return result
 }

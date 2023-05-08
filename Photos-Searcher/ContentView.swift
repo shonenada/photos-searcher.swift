@@ -178,7 +178,7 @@ struct ContentView: View {
             print(error)
         }
         print("Parse vector from database: \(NSDate().timeIntervalSince1970 - startTS)")
-        
+
         for j in 0..<1000 {
             for i in 0...9 {
                 group.enter()
@@ -275,7 +275,7 @@ struct ContentView: View {
         var sims: [String: Float32] = [:];
 //        var sims: [Float32] = [];
         for (name, imageFeature) in photoFeatures {
-            let out = cosineSim(A: textArr, B: imageFeature)
+            let out = cosineSimilarity(textArr, imageFeature)
             sims[name] = out
 //            sims.append(out)
         }
@@ -288,8 +288,10 @@ struct ContentView: View {
 //        simsMap.sort {
 //            $0.1 > $1.1
 //        }
-        let sortedSims = sims.sorted { $0.value > $1.value }
-        
+        let sortedSims = sims.sorted {
+            $0.value > $1.value
+        }
+
         displayImages.removeAll()
         displayFeatures.removeAll()
         for p in sortedSims.prefix(3) {
