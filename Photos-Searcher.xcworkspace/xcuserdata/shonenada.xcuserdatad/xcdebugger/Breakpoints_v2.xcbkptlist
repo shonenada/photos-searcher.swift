@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   uuid = "53AA8E5A-E704-435D-8F4A-402C6A6F8415"
+   type = "0"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "DFCC4EFA-83A7-4D92-80E2-F5DA240DCA7D"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Photos-Searcher/ContentView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "122"
+            endingLineNumber = "122"
+            landmarkName = "initModels()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "1C119961-3158-4AC6-8CCC-0BF9A27861C9"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Photos-Searcher/ContentView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "278"
+            endingLineNumber = "278"
+            landmarkName = "search()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "1C119961-3158-4AC6-8CCC-0BF9A27861C9 - 2e5c572222c8d9bf"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Photos_Searcher.ContentView.search() -&gt; ()"
+                  moduleName = "Photos-Searcher"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/shonenada/Projects/Photos-Searcher/Photos-Searcher/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "321"
+                  endingLineNumber = "321"
+                  offsetFromSymbolStart = "852">
+               </Location>
+               <Location
+                  uuid = "1C119961-3158-4AC6-8CCC-0BF9A27861C9 - 2e5c572222c8d900"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Photos_Searcher.ContentView.search() -&gt; ()"
+                  moduleName = "Photos-Searcher"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/shonenada/Projects/Photos-Searcher/Photos-Searcher/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "318"
+                  endingLineNumber = "318"
+                  offsetFromSymbolStart = "860">
+               </Location>
+               <Location
+                  uuid = "1C119961-3158-4AC6-8CCC-0BF9A27861C9 - 2e5c572222c8d961"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Photos_Searcher.ContentView.search() -&gt; ()"
+                  moduleName = "Photos-Searcher"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/shonenada/Projects/Photos-Searcher/Photos-Searcher/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "319"
+                  endingLineNumber = "319"
+                  offsetFromSymbolStart = "728">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>

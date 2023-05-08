@@ -1,2 +1,5 @@
 python/*.mlmodel
 .python-version
+
+.idea/
+Pods/

@@ -8,13 +8,33 @@
 import SwiftUI
 import Foundation
 import CoreML
+import GRDB
+
+class LogTracer {
+    var date: Date;
+
+    init() {
+        date = Date()
+    }
+
+    func start() {
+        date = Date()
+    }
+
+    func logWithTime(msg: String) {
+        let now = Date()
+        print("\(now.timeIntervalSince(date)) \(msg)")
+        date = now
+    }
+}
 
 struct ContentView: View {
+    let logTracer = LogTracer();
     @State var tokenizer: BPETokenizer? = nil;
     @State var textEncoder: ClipTextEncoder? = nil;
     @State var imageEncoder: ClipImageEncoder? = nil;
-    @State var photoFeatures: [MLMultiArray] = [];
-    @State var photos: [UIImage] = [];
+    @State var photoFeatures: [String: [Float32]] = [:];
+    @State var photos: [String: UIImage] = [:];
 
     @State var isInitModel: Bool = false;
     @State var isModelReady: Bool = false;
@@ -24,10 +44,11 @@ struct ContentView: View {
     @State var displayImages: [UIImage] = [];
     @State var displayFeatures: [Float32] = [];
     @State var isSearching = false;
-    
+
     var body: some View {
         VStack {
             if !isInitModel {
+
                 Button(action: {
                     isInitModel = true
                     DispatchQueue.global(qos: .userInitiated).async {
@@ -37,46 +58,53 @@ struct ContentView: View {
                 }, label: {
                     Text("Scan Photos")
                 })
-                .padding(20)
-                .border(.blue, width: 2)
+                        .padding(20)
+                        .border(.blue, width: 2)
             } else if !isModelReady {
                 Text("Scaning photos...")
             } else {
-                HStack{
+                HStack {
                     Text("Keyword")
                     TextField("Keyword", text: $keyword)
-                }.padding(20)
+                }
+                        .padding(20)
                 Button(action: {
                     isSearching = true
-                    DispatchQueue.global(qos: .userInitiated).async { search() }
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        search()
+                    }
                 }, label: {
                     if isSearching {
                         Text("Searching...")
                     } else {
                         Text("Search")
                     }
-                }).disabled(isSearching)
+                })
+                        .disabled(isSearching)
                 Spacer()
 
                 ScrollView {
                     ForEach(Array(displayImages.enumerated()), id: \.offset) { idx, image in
                         Image(uiImage: image)
-                            .resizable()
-                            .imageScale(.large)
-                            .aspectRatio(contentMode: .fit)
+                                .resizable()
+                                .imageScale(.large)
+                                .aspectRatio(contentMode: .fit)
                         Text("Probs: \(displayFeatures[idx])")
                     }
                 }
-                
+
             }
         }
-        .padding()
+                .padding()
     }
-    
+
     func initModels() {
+        logTracer.start()
         if (isModelReady) {
             return
         }
+        logTracer.logWithTime(msg: "start init model");
+
         // Initialize Tokenizer
         guard let vocabURL = Bundle.main.url(forResource: "vocab", withExtension: "json") else {
             fatalError("BPE tokenizer vocabulary file is missing from bundle")
@@ -84,24 +112,16 @@ struct ContentView: View {
         guard let mergesURL = Bundle.main.url(forResource: "merges", withExtension: "txt") else {
             fatalError("BPE tokenizer merges file is missing from bundle")
         }
+        logTracer.logWithTime(msg: "init URLs");
+
         do {
             self.tokenizer = try BPETokenizer(mergesAt: mergesURL, vocabularyAt: vocabURL);
         } catch {
             print(error)
         }
-        print("Initialized tokenier")
-        
-        // Initialize Text Encoder
-        do {
-            let config = MLModelConfiguration()
-            self.textEncoder = try ClipTextEncoder(configuration: config)
-        } catch {
-            print("Failed to init TextEncoder")
-            print(error)
-        }
-        print("Initialized TextEncoder")
-        
-        // Initiailize Image Encoder
+        logTracer.logWithTime(msg: "Initialized tokenizer")
+
+        // Initialize Image Encoder
         do {
             let config = MLModelConfiguration()
             self.imageEncoder = try ClipImageEncoder(configuration: config)
@@ -109,33 +129,116 @@ struct ContentView: View {
             print("Failed to init ImageEncoder")
             print(error)
         }
+        logTracer.logWithTime(msg: "Initialized image encoder")
         print("Initialized ImageEncoder")
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Initialize Text Encoder
+            do {
+                let config = MLModelConfiguration()
+                self.textEncoder = try ClipTextEncoder(configuration: config)
+            } catch {
+                print("Failed to init TextEncoder")
+                print(error)
+            }
+            logTracer.logWithTime(msg: "Initialized text encoder")
+            print("Initialized TextEncoder")
+        }
+
     }
-   
+
     func scanPhotos() {
+        let startTS = NSDate().timeIntervalSince1970
+
+        let group = DispatchGroup()
+        let queue = DispatchQueue.global(qos: .background)
+
         if (isModelReady) {
             return
         }
         print("Scan photos")
         // Getting features from example photos
-        for i in 0...9 {
-            print("Scaning photo\(i)")
-            let image = UIImage(named: "photo\(i).jpg")
-            self.photos.append(image!);
-            let resized = image?.resize(size: CGSize(width: 244, height: 244))
-            // TODO: Use Vision package to resize and center crop image.
-            let ciImage = CIImage(image: resized!)
-            let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
-            do {
-                let input = try ClipImageEncoderInput(imageWith: cgImage!)
-                let output = try self.imageEncoder?.prediction(input: input)
-                self.photoFeatures.append(output!.features);
-            } catch {
-                print("Failed to encode image photo\(i).jpg")
-                print(error)
+        var features: [String: [Float32]] = [:];
+        let jsonDecoder = JSONDecoder()
+        do {
+            try dbQueue.read { db in
+                let allFeatures = try! Feature.fetchAll(db)
+                print("Reload from database: \(NSDate().timeIntervalSince1970 - startTS)")
+
+                for i in 0..<allFeatures.count {
+                    let f = allFeatures[i]
+                    let image = f.image
+                    let featureString = f.feature
+                    let jsonData = featureString!.data(using: .utf8)!
+                    let feature = try! jsonDecoder.decode([Float32].self, from: jsonData)
+                    features[image] = feature
+                }
+            }
+        } catch {
+            print(error)
+        }
+        print("Parse vector from database: \(NSDate().timeIntervalSince1970 - startTS)")
+        
+        for j in 0..<1000 {
+            for i in 0...9 {
+                group.enter()
+                queue.async {
+                    let number = j * 10 + i
+                    let name = "image_\(number)"
+                    var found = false
+                    if let feature = features[name] {
+                        print("Load photo \(number) from database")
+                        let imageName = "photo\(i).jpg"
+                        let image = UIImage(named: imageName)
+                        self.photos[name] = image!;
+                        self.photoFeatures[name] = feature;
+                        found = true
+                    }
+                    // TODO: Refactor: split codes.
+                    if !found {
+                        print("Scanning photo \(number)")
+                        let imageName = "photo\(i).jpg"
+
+                        let image = UIImage(named: imageName)
+                        self.photos[name] = image!;
+
+                        let resized = image?.resize(size: CGSize(width: 244, height: 244))
+                        // TODO: Use Vision package to resize and center crop image.
+                        let ciImage = CIImage(image: resized!)
+                        let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
+                        let jsonEncoder = JSONEncoder()
+                        do {
+                            let input = try ClipImageEncoderInput(imageWith: cgImage!)
+                            let output = try self.imageEncoder?.prediction(input: input)
+                            let outputFeatures = output!.features
+                            let featuresArray = convertMultiArray(input: outputFeatures)
+                            let jsonData = try? jsonEncoder.encode(featuresArray)
+                            let jsonString = String(data: jsonData!, encoding: .utf8)!
+                            self.photoFeatures[name] = featuresArray;
+
+                            try dbQueue.write { db in
+                                var x = Feature(image: "image_\(number)", feature: jsonString)
+                                try! x.insert(db)
+                            }
+                            //                        try dbQueue.read { db in
+                            //                            if let row = try Row.fetchOne(db, sql: "SELECT vss_version();") {
+                            //                                print(row)
+                            //                            }
+                            //                        }
+                        } catch {
+                            print("Failed to encode image photo \(number)")
+                            print(error)
+                        }
+                    }
+                    group.leave()
+                }
             }
         }
-        isModelReady = true
+        group.notify(queue: .main) {
+            let endTS = NSDate().timeIntervalSince1970
+            print("Elapsed: \(endTS - startTS)")
+            isModelReady = true
+        }
     }
 
     func get_keyword_features() -> MLMultiArray? {
@@ -158,35 +261,45 @@ struct ContentView: View {
         }
         return nil
     }
-    
+
     func search() {
+        let startTS = NSDate().timeIntervalSince1970
+
         if self.keyword.isEmpty {
             // TODO: return message
             return;
         }
         let features = get_keyword_features()
-        
+
         let textArr = convertMultiArray(input: features!)
-        var sims: [Float32] = [];
-        for i in 0...9 {
-            let imageArr = convertMultiArray(input: photoFeatures[i])
-            let out = cosineSim(A: textArr, B: imageArr)
-            sims.append(out)
+        var sims: [String: Float32] = [:];
+//        var sims: [Float32] = [];
+        for (name, imageFeature) in photoFeatures {
+            let out = cosineSim(A: textArr, B: imageFeature)
+            sims[name] = out
+//            sims.append(out)
         }
-        let probs = softmax(sims)
-        var simsMap: [(Int, Float32)] = []
-        for i in 0...9 {
-            let prob = probs[i]
-            simsMap.append((i, prob))
-        }
-        simsMap.sort { $0.1 > $1.1 }
+//        let probs = softmax(sims)
+//        var simsMap: [(Int, Float32)] = []
+//        for i in 0..<probs.count {
+//            let prob = probs[i]
+//            simsMap.append((i, prob))
+//        }
+//        simsMap.sort {
+//            $0.1 > $1.1
+//        }
+        let sortedSims = sims.sorted { $0.value > $1.value }
+        
         displayImages.removeAll()
         displayFeatures.removeAll()
-        for p in simsMap[0..<3] {
-            displayImages.append(photos[p.0]);
-            displayFeatures.append(p.1);
+        for p in sortedSims.prefix(3) {
+            if let photo = photos[p.key] {
+                displayImages.append(photo);
+                displayFeatures.append(p.value);
+            }
         }
         isSearching = false;
+        print("Search \(NSDate().timeIntervalSince1970 - startTS)")
     }
 }
 
