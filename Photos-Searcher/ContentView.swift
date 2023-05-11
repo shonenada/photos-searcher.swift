@@ -178,7 +178,6 @@ struct ContentView: View {
         print("Scan photos")
         // Getting features from example photos
         var features: [String: [Float32]] = [:];
-        let jsonDecoder = JSONDecoder()
         do {
             try dbQueue.read { db in
                 let allFeatures = try! Feature.fetchAll(db)
@@ -188,10 +187,7 @@ struct ContentView: View {
                     let f = allFeatures[i]
                     let image = f.image
                     let feature = f.feature
-//                    print(featureString)
-//                    let jsonData = featureString!.data(using: .utf8)!
-//                    let feature = try! jsonDecoder.decode([Float32].self, from: jsonData)
-                    features[image] = feature
+                    features[image] = extractArray(from: feature)
                 }
             }
         } catch {
@@ -207,7 +203,7 @@ struct ContentView: View {
                     let name = "image_\(number)"
                     var found = false
                     if let feature = features[name] {
-                        print("Load photo \(number) from database")
+//                        print("Load photo \(number) from database")
                         let imageName = "photo\(i).jpg"
                         let image = UIImage(named: imageName)
                         self.photos[name] = image!;
@@ -226,25 +222,17 @@ struct ContentView: View {
                         // TODO: Use Vision package to resize and center crop image.
                         let ciImage = CIImage(image: resized!)
                         let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
-                        let jsonEncoder = JSONEncoder()
                         do {
                             let input = try ClipImageEncoderInput(imageWith: cgImage!)
                             let output = try self.imageEncoder?.prediction(input: input)
                             let outputFeatures = output!.features
                             let featuresArray = convertMultiArray(input: outputFeatures)
-//                            let jsonData = try? jsonEncoder.encode(featuresArray)
-//                            let jsonString = String(data: jsonData!, encoding: .utf8)!
                             self.photoFeatures[name] = featuresArray;
 
                             try dbQueue.write { db in
-                                var x = Feature(image: "image_\(number)", feature: featuresArray)
-                                try! x.insert(db)
+                                let featureData = createData(from: featuresArray)
+                                try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
                             }
-                            //                        try dbQueue.read { db in
-                            //                            if let row = try Row.fetchOne(db, sql: "SELECT vss_version();") {
-                            //                                print(row)
-                            //                            }
-                            //                        }
                         } catch {
                             print("Failed to encode image photo \(number)")
                             print(error)
@@ -296,19 +284,12 @@ struct ContentView: View {
                             let output = try self.imageEncoder?.prediction(input: input)
                             let outputFeatures = output!.features
                             let featuresArray = convertMultiArray(input: outputFeatures)
-//                            let jsonData = try? jsonEncoder.encode(featuresArray)
-//                            let jsonString = String(data: jsonData!, encoding: .utf8)!
                             self.photoFeatures[name] = featuresArray;
 
                             try dbQueue.write { db in
-                                var x = Feature(image: "image_\(number)", feature: featuresArray)
-                                try! x.insert(db)
+                                let featureData = createData(from: featuresArray)
+                                try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
                             }
-                            //                        try dbQueue.read { db in
-                            //                            if let row = try Row.fetchOne(db, sql: "SELECT vss_version();") {
-                            //                                print(row)
-                            //                            }
-                            //                        }
                         } catch {
                             print("Failed to encode image photo \(number)")
                             print(error)

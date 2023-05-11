@@ -10,8 +10,8 @@ import GRDB
 struct Feature {
     var id: Int64?
     var image: String
-    var feature: [Float]
-    var is_meme: Bool
+    var feature: Data
+//    var is_meme: Bool
 }
 
 extension Feature: Codable, FetchableRecord, MutablePersistableRecord {
@@ -21,7 +21,7 @@ extension Feature: Codable, FetchableRecord, MutablePersistableRecord {
         static let id = Column(CodingKeys.id)
         static let image = Column(CodingKeys.image)
         static let feature = Column(CodingKeys.feature)
-        static let isMeme = Column(CodingKeys.is_meme)
+//        static let isMeme = Column(CodingKeys.is_meme)
     }
 
     mutating func didInsert(with rowID: Int64, for column: String?) {
