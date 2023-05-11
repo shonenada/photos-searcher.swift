@@ -63,38 +63,34 @@ struct ContentView: View {
             } else if !isModelReady {
                 Text("Scanning photos...")
             } else {
-                if (!isModelReady) {
-                    Text("Wait for model ready")
-                } else {
-                    HStack {
-                        Text("Keyword")
-                        TextField("Keyword", text: $keyword)
+                HStack {
+                    Text("Keyword")
+                    TextField("Keyword", text: $keyword)
+                }
+                        .padding(20)
+                Button(action: {
+                    isSearching = true
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        search()
                     }
-                            .padding(20)
-                    Button(action: {
-                        isSearching = true
-                        DispatchQueue.global(qos: .userInitiated).async {
-                            search()
-                        }
-                    }, label: {
-                        if isSearching {
-                            Text("Searching...")
-                        } else {
-                            Text("Search")
-                        }
-                    })
-                            .disabled(isSearching || !isModelReady)
-                    Spacer()
+                }, label: {
+                    if isSearching {
+                        Text("Searching...")
+                    } else {
+                        Text("Search")
+                    }
+                })
+                        .disabled(isSearching || !isModelReady)
+                Spacer()
 
-                    ScrollView {
-                        ForEach(Array(displayImages.enumerated()), id: \.offset) { idx, ele in
-                            let (image, probs, meme) = ele
-                            Image(uiImage: image)
-                                    .resizable()
-                                    .imageScale(.large)
-                                    .aspectRatio(contentMode: .fit)
-                            Text("Probs: \(probs); IsMeme \(meme.description)")
-                        }
+                ScrollView {
+                    ForEach(Array(displayImages.enumerated()), id: \.offset) { idx, ele in
+                        let (image, probes, meme) = ele
+                        Image(uiImage: image)
+                                .resizable()
+                                .imageScale(.large)
+                                .aspectRatio(contentMode: .fit)
+                        Text("Probes: \(probes); IsMeme \(meme.description)")
                     }
                 }
             }
@@ -103,26 +99,15 @@ struct ContentView: View {
     }
 
     func initModels() {
-        if (isModelReady) {
-            return
-        }
-        let group = DispatchGroup()
-        let queue = DispatchQueue.global(qos: .background)
-        group.enter()
-        queue.async {
-            _initTextEncoder()
-        }
-        queue.async {
-            _initImageEncoder()
-        }
-        group.leave()
-
-        group.notify(queue: .main) {
-            isModelReady = true
-        }
+        _initTextEncoder()
+        _initImageEncoder()
     }
 
     func _initImageEncoder() {
+        if let _ = self.imageEncoder {
+            return
+        }
+
         // Initialize Image Encoder
         do {
             let config = MLModelConfiguration()
@@ -136,6 +121,10 @@ struct ContentView: View {
     }
 
     func _initTokenizer() {
+        if let _ = self.tokenizer {
+            return
+        }
+
         // Initialize Tokenizer
         guard let vocabURL = Bundle.main.url(forResource: "vocab", withExtension: "json") else {
             fatalError("BPE tokenizer vocabulary file is missing from bundle")
@@ -153,6 +142,10 @@ struct ContentView: View {
 
     func _initTextEncoder() {
         _initTokenizer()
+
+        if let _ = self.textEncoder {
+            return
+        }
 
         // Initialize Text Encoder
         do {
@@ -201,42 +194,38 @@ struct ContentView: View {
                 queue.async {
                     let number = j * 10 + i
                     let name = "image_\(number)"
-                    var found = false
                     if let feature = features[name] {
 //                        print("Load photo \(number) from database")
                         let imageName = "photo\(i).jpg"
                         let image = UIImage(named: imageName)
                         self.photos[name] = image!;
                         self.photoFeatures[name] = feature;
-                        found = true
                     }
                     // TODO: Refactor: split codes.
-                    if !found {
-                        print("Scanning photo \(number)")
-                        let imageName = "photo\(i).jpg"
+                    print("Scanning photo \(number)")
+                    let imageName = "photo\(i).jpg"
 
-                        let image = UIImage(named: imageName)
-                        self.photos[name] = image!;
+                    let image = UIImage(named: imageName)
+                    self.photos[name] = image!;
 
-                        let resized = image?.resize(size: CGSize(width: 244, height: 244))
-                        // TODO: Use Vision package to resize and center crop image.
-                        let ciImage = CIImage(image: resized!)
-                        let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
-                        do {
-                            let input = try ClipImageEncoderInput(imageWith: cgImage!)
-                            let output = try self.imageEncoder?.prediction(input: input)
-                            let outputFeatures = output!.features
-                            let featuresArray = convertMultiArray(input: outputFeatures)
-                            self.photoFeatures[name] = featuresArray;
+                    let resized = image?.resize(size: CGSize(width: 244, height: 244))
+                    // TODO: Use Vision package to resize and center crop image.
+                    let ciImage = CIImage(image: resized!)
+                    let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
+                    do {
+                        let input = try ClipImageEncoderInput(imageWith: cgImage!)
+                        let output = try self.imageEncoder?.prediction(input: input)
+                        let outputFeatures = output!.features
+                        let featuresArray = convertMultiArray(input: outputFeatures)
+                        self.photoFeatures[name] = featuresArray;
 
-                            try dbQueue.write { db in
-                                let featureData = createData(from: featuresArray)
-                                try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
-                            }
-                        } catch {
-                            print("Failed to encode image photo \(number)")
-                            print(error)
+                        try dbQueue.write { db in
+                            let featureData = createData(from: featuresArray)
+                            try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
                         }
+                    } catch {
+                        print("Failed to encode image photo \(number)")
+                        print(error)
                     }
                     group.leave()
                 }
@@ -247,7 +236,6 @@ struct ContentView: View {
                 queue.async {
                     let number = j * 10 + k
                     let name = "meme_\(number)"
-                    var found = false
                     if let feature = features[name] {
                         print("Load photo \(number) from database")
                         let imageName: String;
@@ -259,47 +247,44 @@ struct ContentView: View {
                         let image = UIImage(named: imageName)
                         self.photos[name] = image!;
                         self.photoFeatures[name] = feature;
-                        found = true
                     }
                     // TODO: Refactor: split codes.
-                    if !found {
-                        print("Scanning meme \(number)")
-                        let imageName: String;
-                        if k >= 2 {
-                            imageName = "meme\(k).gif"
-                        } else {
-                            imageName = "meme\(k).jpg"
-                        }
-
-                        let image = UIImage(named: imageName)
-                        self.photos[name] = image!;
-
-                        let resized = image?.resize(size: CGSize(width: 244, height: 244))
-                        // TODO: Use Vision package to resize and center crop image.
-                        let ciImage = CIImage(image: resized!)
-                        let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
-                        let jsonEncoder = JSONEncoder()
-                        do {
-                            let input = try ClipImageEncoderInput(imageWith: cgImage!)
-                            let output = try self.imageEncoder?.prediction(input: input)
-                            let outputFeatures = output!.features
-                            let featuresArray = convertMultiArray(input: outputFeatures)
-                            self.photoFeatures[name] = featuresArray;
-
-                            try dbQueue.write { db in
-                                let featureData = createData(from: featuresArray)
-                                try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
-                            }
-                        } catch {
-                            print("Failed to encode image photo \(number)")
-                            print(error)
-                        }
+                    print("Scanning meme \(number)")
+                    let imageName: String;
+                    if k >= 2 {
+                        imageName = "meme\(k).gif"
+                    } else {
+                        imageName = "meme\(k).jpg"
                     }
-                    group.leave()
+
+                    let image = UIImage(named: imageName)
+                    self.photos[name] = image!;
+
+                    let resized = image?.resize(size: CGSize(width: 244, height: 244))
+                    // TODO: Use Vision package to resize and center crop image.
+                    let ciImage = CIImage(image: resized!)
+                    let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
+                    do {
+                        let input = try ClipImageEncoderInput(imageWith: cgImage!)
+                        let output = try self.imageEncoder?.prediction(input: input)
+                        let outputFeatures = output!.features
+                        let featuresArray = convertMultiArray(input: outputFeatures)
+                        self.photoFeatures[name] = featuresArray;
+
+                        try dbQueue.write { db in
+                            let featureData = createData(from: featuresArray)
+                            try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
+                        }
+                    } catch {
+                        print("Failed to encode image photo \(number)")
+                        print(error)
+                    }
                 }
+                group.leave()
             }
         }
         group.notify(queue: .main) {
+            isModelReady = true
             let elapsed = Date().timeIntervalSince(startTime)
             print("Elapsed: \(elapsed)")
         }
