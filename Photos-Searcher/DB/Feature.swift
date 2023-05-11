@@ -10,7 +10,8 @@ import GRDB
 struct Feature {
     var id: Int64?
     var image: String
-    var feature: String?
+    var feature: [Float]
+//    var meme: Bool
 }
 
 extension Feature: Codable, FetchableRecord, MutablePersistableRecord {
