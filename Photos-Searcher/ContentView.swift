@@ -52,8 +52,8 @@ struct ContentView: View {
                 Button(action: {
                     isInitModel = true
                     DispatchQueue.global(qos: .userInitiated).async {
-                        initModels()
                         scanPhotos()
+                        initModels()
                     }
                 }, label: {
                     Text("Scan Photos")
@@ -74,13 +74,16 @@ struct ContentView: View {
                         search()
                     }
                 }, label: {
+                    if (isInitModel) {
+                        Text("Init model")
+                    }
                     if isSearching {
                         Text("Searching...")
                     } else {
                         Text("Search")
                     }
                 })
-                        .disabled(isSearching)
+                        .disabled(isSearching || !isInitModel)
                 Spacer()
 
                 ScrollView {
@@ -100,12 +103,22 @@ struct ContentView: View {
     }
 
     func initModels() {
-        logTracer.start()
         if (isModelReady) {
             return
         }
-        logTracer.logWithTime(msg: "start init model");
 
+        logTracer.logWithTime(msg: "Initialized tokenizer")
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            initTokenizier()
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            initTextEncoder()
+        }
+    }
+
+    func initTokenizier() {
         // Initialize Tokenizer
         guard let vocabURL = Bundle.main.url(forResource: "vocab", withExtension: "json") else {
             fatalError("BPE tokenizer vocabulary file is missing from bundle")
@@ -113,15 +126,14 @@ struct ContentView: View {
         guard let mergesURL = Bundle.main.url(forResource: "merges", withExtension: "txt") else {
             fatalError("BPE tokenizer merges file is missing from bundle")
         }
-        logTracer.logWithTime(msg: "init URLs");
-
         do {
             self.tokenizer = try BPETokenizer(mergesAt: mergesURL, vocabularyAt: vocabURL);
         } catch {
             print(error)
         }
-        logTracer.logWithTime(msg: "Initialized tokenizer")
+    }
 
+    func initImageEncoder() {
         // Initialize Image Encoder
         do {
             let config = MLModelConfiguration()
@@ -133,18 +145,19 @@ struct ContentView: View {
         logTracer.logWithTime(msg: "Initialized image encoder")
         print("Initialized ImageEncoder")
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            // Initialize Text Encoder
-            do {
-                let config = MLModelConfiguration()
-                self.textEncoder = try ClipTextEncoder(configuration: config)
-            } catch {
-                print("Failed to init TextEncoder")
-                print(error)
-            }
-            logTracer.logWithTime(msg: "Initialized text encoder")
-            print("Initialized TextEncoder")
+    }
+
+    func initTextEncoder() {
+        // Initialize Text Encoder
+        do {
+            let config = MLModelConfiguration()
+            self.textEncoder = try ClipTextEncoder(configuration: config)
+        } catch {
+            print("Failed to init TextEncoder")
+            print(error)
         }
+        logTracer.logWithTime(msg: "Initialized text encoder")
+        print("Initialized TextEncoder")
 
     }
 
@@ -169,7 +182,7 @@ struct ContentView: View {
                     let f = allFeatures[i]
                     let image = f.image
                     let feature = f.feature
-                    features[image] = feature
+                    features[image] = extractArray(from: feature)
                 }
             }
         } catch {
@@ -177,6 +190,8 @@ struct ContentView: View {
         }
         print("Parse vector from database: \(Date().timeIntervalSince(startTime))")
 
+//        initModels()
+        
         for j in 0..<1000 {
             for i in 0...9 {
                 group.enter()
@@ -185,7 +200,7 @@ struct ContentView: View {
                     let name = "image_\(number)"
                     var found = false
                     if let feature = features[name] {
-                        print("Load photo \(number) from database")
+//                        print("Load photo \(number) from database")
                         let imageName = "photo\(i).jpg"
                         let image = UIImage(named: imageName)
                         self.photos[name] = image!;
@@ -205,7 +220,7 @@ struct ContentView: View {
                         // TODO: Use Vision package to resize and center crop image.
                         let ciImage = CIImage(image: resized!)
                         let cgImage = convertCIImageToCGImage(inputImage: ciImage!)
-                        let jsonEncoder = JSONEncoder()
+//                        let jsonEncoder = JSONEncoder()
                         do {
                             let input = try ClipImageEncoderInput(imageWith: cgImage!)
                             let output = try self.imageEncoder?.prediction(input: input)
@@ -214,8 +229,8 @@ struct ContentView: View {
                             self.photoFeatures[name] = featuresArray;
 
                             try dbQueue.write { db in
-                                var x = Feature(image: "image_\(number)", feature: featuresArray)
-                                try! x.insert(db)
+                                let featureData = createData(from: featuresArray)
+                                try db.execute(sql: "INSERT INTO feature (image, feature) VALUES (?, ?)", arguments: ["image_\(number)", featureData])
                             }
                         } catch {
                             print("Failed to encode image photo \(number)")

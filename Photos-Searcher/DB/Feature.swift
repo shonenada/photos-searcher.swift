@@ -10,7 +10,7 @@ import GRDB
 struct Feature {
     var id: Int64?
     var image: String
-    var feature: [Float]
+    var feature: Data
 //    var meme: Bool
 }
 

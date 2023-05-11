@@ -22,7 +22,7 @@ final class DatabaseManager {
             db.trace { print($0) }
         }
         dbQueue = try DatabaseQueue(path: databaseURL.path, configuration: config)
-        
+
         try migrator.migrate(dbQueue)
 //        try setupVSS()
     }
@@ -34,7 +34,7 @@ final class DatabaseManager {
             try db.create(table: "feature") { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("image", .text).notNull()
-                t.column("feature", .text).notNull()
+                t.column("feature", .blob).notNull()
             }
         }
 

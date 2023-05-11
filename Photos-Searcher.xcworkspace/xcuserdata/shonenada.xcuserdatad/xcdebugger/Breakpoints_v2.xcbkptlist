@@ -14,10 +14,10 @@
             filePath = "Photos-Searcher/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "124"
-            endingLineNumber = "124"
-            landmarkName = "initModels()"
-            landmarkType = "7">
+            startingLineNumber = "111"
+            endingLineNumber = "111"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -31,9 +31,7 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "396"
-            endingLineNumber = "396"
-            landmarkName = "search()"
-            landmarkType = "7">
+            endingLineNumber = "396">
             <Locations>
                <Location
                   uuid = "1C119961-3158-4AC6-8CCC-0BF9A27861C9 - 2e5c572222c8d9bf"
