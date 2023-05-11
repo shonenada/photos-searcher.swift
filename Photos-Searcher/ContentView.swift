@@ -49,7 +49,6 @@ struct ContentView: View {
     var body: some View {
         VStack {
             if !isInitModel {
-
                 Button(action: {
                     isInitModel = true
                     DispatchQueue.global(qos: .userInitiated).async {
@@ -64,65 +63,66 @@ struct ContentView: View {
             } else if !isModelReady {
                 Text("Scanning photos...")
             } else {
-                HStack {
-                    Text("Keyword")
-                    TextField("Keyword", text: $keyword)
-                }
-                        .padding(20)
-                Button(action: {
-                    isSearching = true
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        search()
+                if (!isModelReady) {
+                    Text("Wait for model ready")
+                } else {
+                    HStack {
+                        Text("Keyword")
+                        TextField("Keyword", text: $keyword)
                     }
-                }, label: {
-                    if isSearching {
-                        Text("Searching...")
-                    } else {
-                        Text("Search")
-                    }
-                })
-                        .disabled(isSearching)
-                Spacer()
+                            .padding(20)
+                    Button(action: {
+                        isSearching = true
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            search()
+                        }
+                    }, label: {
+                        if isSearching {
+                            Text("Searching...")
+                        } else {
+                            Text("Search")
+                        }
+                    })
+                            .disabled(isSearching || !isModelReady)
+                    Spacer()
 
-                ScrollView {
-                    ForEach(Array(displayImages.enumerated()), id: \.offset) { idx, ele in
-                        let (image, probs, meme) = ele
-                        Image(uiImage: image)
-                                .resizable()
-                                .imageScale(.large)
-                                .aspectRatio(contentMode: .fit)
-                        Text("Probs: \(probs); IsMeme \(meme.description)")
+                    ScrollView {
+                        ForEach(Array(displayImages.enumerated()), id: \.offset) { idx, ele in
+                            let (image, probs, meme) = ele
+                            Image(uiImage: image)
+                                    .resizable()
+                                    .imageScale(.large)
+                                    .aspectRatio(contentMode: .fit)
+                            Text("Probs: \(probs); IsMeme \(meme.description)")
+                        }
                     }
                 }
-
             }
         }
                 .padding()
     }
 
     func initModels() {
-        logTracer.start()
         if (isModelReady) {
             return
         }
-        logTracer.logWithTime(msg: "start init model");
-
-        // Initialize Tokenizer
-        guard let vocabURL = Bundle.main.url(forResource: "vocab", withExtension: "json") else {
-            fatalError("BPE tokenizer vocabulary file is missing from bundle")
+        let group = DispatchGroup()
+        let queue = DispatchQueue.global(qos: .background)
+        group.enter()
+        queue.async {
+            _initTextEncoder()
         }
-        guard let mergesURL = Bundle.main.url(forResource: "merges", withExtension: "txt") else {
-            fatalError("BPE tokenizer merges file is missing from bundle")
+        queue.async {
+            _initImageEncoder()
         }
-        logTracer.logWithTime(msg: "init URLs");
+        group.leave()
 
-        do {
-            self.tokenizer = try BPETokenizer(mergesAt: mergesURL, vocabularyAt: vocabURL);
-        } catch {
-            print(error)
+        group.notify(queue: .main) {
+            isModelReady = true
         }
-        logTracer.logWithTime(msg: "Initialized tokenizer")
+    }
 
+    func _initImageEncoder() {
         // Initialize Image Encoder
         do {
             let config = MLModelConfiguration()
@@ -133,20 +133,37 @@ struct ContentView: View {
         }
         logTracer.logWithTime(msg: "Initialized image encoder")
         print("Initialized ImageEncoder")
+    }
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            // Initialize Text Encoder
-            do {
-                let config = MLModelConfiguration()
-                self.textEncoder = try ClipTextEncoder(configuration: config)
-            } catch {
-                print("Failed to init TextEncoder")
-                print(error)
-            }
-            logTracer.logWithTime(msg: "Initialized text encoder")
-            print("Initialized TextEncoder")
+    func _initTokenizer() {
+        // Initialize Tokenizer
+        guard let vocabURL = Bundle.main.url(forResource: "vocab", withExtension: "json") else {
+            fatalError("BPE tokenizer vocabulary file is missing from bundle")
+        }
+        guard let mergesURL = Bundle.main.url(forResource: "merges", withExtension: "txt") else {
+            fatalError("BPE tokenizer merges file is missing from bundle")
         }
 
+        do {
+            self.tokenizer = try BPETokenizer(mergesAt: mergesURL, vocabularyAt: vocabURL);
+        } catch {
+            print(error)
+        }
+    }
+
+    func _initTextEncoder() {
+        _initTokenizer()
+
+        // Initialize Text Encoder
+        do {
+            let config = MLModelConfiguration()
+            self.textEncoder = try ClipTextEncoder(configuration: config)
+        } catch {
+            print("Failed to init TextEncoder")
+            print(error)
+        }
+        logTracer.logWithTime(msg: "Initialized text encoder")
+        print("Initialized TextEncoder")
     }
 
     func scanPhotos() {
@@ -304,7 +321,6 @@ struct ContentView: View {
         group.notify(queue: .main) {
             let elapsed = Date().timeIntervalSince(startTime)
             print("Elapsed: \(elapsed)")
-            isModelReady = true
         }
     }
 

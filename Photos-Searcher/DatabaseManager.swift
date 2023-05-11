@@ -4,6 +4,7 @@
 //
 //  Created by shonenada on 2023/4/28.
 //
+
 import GRDB
 import UIKit
 
@@ -12,35 +13,38 @@ var dbQueue: DatabaseQueue!
 final class DatabaseManager {
     static func setup(for application: UIApplication) throws {
         let databaseURL = try FileManager.default
-            .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent("db.sqlite")
+                .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+                .appendingPathComponent("db.sqlite")
         print(databaseURL.path)
 
 
         var config = Configuration()
         config.prepareDatabase { db in
-            db.trace { print($0) }
+            db.trace {
+                print($0)
+            }
         }
         dbQueue = try DatabaseQueue(path: databaseURL.path, configuration: config)
-        
+
         try migrator.migrate(dbQueue)
 //        try setupVSS()
     }
 
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
-        
+
         migrator.registerMigration("createFeature") { db in
             try db.create(table: "feature") { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("image", .text).notNull()
-                t.column("feature", .text).notNull()
+                t.column("is_meme", .boolean).notNull()
+                t.column("feature", .blob).notNull()
             }
         }
 
         return migrator
     }
-    
+
     static func setupVSS() throws {
         try dbQueue.read { db in
 //            sqlite3_enable_load_extension(db.sqliteConnection, 1)
@@ -59,7 +63,7 @@ final class DatabaseManager {
 //            print(output)
             // SELECT LOAD_EXTENSION('\(vss0)');
             // SELECT LOAD_EXTENSION("./vss0");
-            
+
 //            sqlite3_enable_load_extension(db.sqliteConnection, 0)
         }
     }
