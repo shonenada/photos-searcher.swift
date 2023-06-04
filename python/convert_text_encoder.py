@@ -31,7 +31,8 @@ class TextEncoderModel(torch.nn.Module):
 
 def convert():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    clip_model, _ = clip.load("ViT-B/32", device=device)
+    # clip_model, _ = clip.load("ViT-B/32", device=device)
+    clip_model, _ = clip.load("./clip_finetune_best_model.pt", device=device)
     model = TextEncoderModel(clipmodel=clip_model)
     model.eval()
 

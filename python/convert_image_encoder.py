@@ -7,7 +7,8 @@ from PIL import Image
 
 def convert():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device)
+    # model, preprocess = clip.load("ViT-B/32", device=device)
+    model, preprocess = clip.load("./clip_finetune_best_model.pt", device=device)
     image_encoder = model.visual
     image_encoder.eval()
 

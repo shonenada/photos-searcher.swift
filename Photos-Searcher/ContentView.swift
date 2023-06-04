@@ -34,6 +34,7 @@ struct ContentView: View {
     @State var tokenizer: BPETokenizer? = nil;
     @State var textEncoder: ClipTextEncoder? = nil;
     @State var imageEncoder: ClipImageEncoder? = nil;
+    @State var memeClassification: MEMEClassification? = nil;
     @State var photoFeatures: [String: [Float32]] = [:];
     @State var photos: [String: UIImage] = [:];
 
@@ -99,8 +100,23 @@ struct ContentView: View {
     }
 
     func initModels() {
+        _initMEMEClassification()
         _initTextEncoder()
         _initImageEncoder()
+    }
+    
+    func _initMEMEClassification() {
+        if let _ = self.memeClassification {
+            return
+        }
+        do {
+            let config = MLModelConfiguration()
+            self.memeClassification = try MEMEClassification(configuration: config)
+        } catch {
+            print("Failed to init MEME Classification")
+            print(error)
+        }
+        print("Initialized MEME Classification")
     }
 
     func _initImageEncoder() {
@@ -330,13 +346,26 @@ struct ContentView: View {
         return nil
     }
 
-    func isMemeImage(imageFeature: [Float]) -> Bool {
+    func isMemeImageWithCLIP(imageFeature: [Float]) -> Bool {
         let mf = get_meme_feature()!
         let arr = [mf.0, mf.1]
         let sims = (cosineSimilarityMulti(imageFeature, arr))
         let simsnorm = softmax(sims)
 //        print("\(simsnorm[0]) \(simsnorm[1]) \(simsnorm[0] > simsnorm[1])")
         return simsnorm[0] > simsnorm[1]
+    }
+
+    func isMemeImage(imageFeature: [Float]) -> Bool {
+        let imageArray = try! MLMultiArray(imageFeature)
+        let input = MEMEClassificationInput(image: imageArray)
+        do {
+            let result = try self.memeClassification!.prediction(input: input)
+            return result.is_meme == 0
+        } catch {
+            print("Failed to parse meme type")
+            print(error)
+        }
+        return false
     }
 
     func get_keyword_features(inputKeyword: String) -> MLMultiArray? {
